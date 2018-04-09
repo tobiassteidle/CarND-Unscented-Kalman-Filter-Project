@@ -22,7 +22,12 @@ public:
   /**
   * A helper method to calculate RMSE.
   */
-  VectorXd CalculateRMSE(const vector<VectorXd> &estimations, const vector<VectorXd> &ground_truth);
+  static VectorXd CalculateRMSE(const vector<VectorXd> &estimations, const vector<VectorXd> &ground_truth);
+  
+  /**
+   * A helper method for Angle normalization
+   */
+  static void NormalizeAngle(double *angle);
 
 };
 
