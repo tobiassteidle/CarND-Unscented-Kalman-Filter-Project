@@ -26,10 +26,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 1.5;
+  std_a_ = 1.3;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 0.57;
+  std_yawdd_ = 0.59;
   
   //DO NOT MODIFY measurement noise values below these are provided by the sensor manufacturer.
   // Laser measurement noise standard deviation position1 in m
@@ -55,6 +55,9 @@ UKF::UKF() {
   
   // set augmented state dimension
   n_aug_ = 7;
+  
+  // set number of sigma points
+  no_sig_p_ = 2 * n_aug_ + 1;
   
   // spreading parameter
   lambda_ = 3 - n_aug_;
