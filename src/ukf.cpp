@@ -48,6 +48,7 @@ UKF::UKF() {
   std_radrd_ = 0.3;
   //DO NOT MODIFY measurement noise values above these are provided by the sensor manufacturer.
   
+  // mark as not initialized
   is_initialized_ = false;
   
   // set state dimension
@@ -180,13 +181,16 @@ void UKF::Prediction(double delta_t) {
   
   // create augmented sigma points
   Xsig_aug.col(0) = x_aug;
+  
+  double sqrt_lambda_n_aug = sqrt(lambda_ + n_aug_);
   for(int i = 0; i < n_aug_; i++) {
-    Xsig_aug.col(i + 1)           = x_aug + sqrt(lambda_ + n_aug_) * L.col(i);
-    Xsig_aug.col(i + 1 + n_aug_)  = x_aug - sqrt(lambda_ + n_aug_) * L.col(i);
+    VectorXd lambda_n_aug_col = sqrt_lambda_n_aug * L.col(i);
+    Xsig_aug.col(i + 1)           = x_aug + lambda_n_aug_col;
+    Xsig_aug.col(i + 1 + n_aug_)  = x_aug - lambda_n_aug_col;
   }
   
   // create matrix with predicted sigma points as columns
-  //Xsig_pred_.fill(0.0);
+  Xsig_pred_.fill(0.0);
   
   // predict sigma points
   for(int i = 0; i < no_sig_p_; i++) {
@@ -199,16 +203,19 @@ void UKF::Prediction(double delta_t) {
     double nu_a = Xsig_aug(5, i);
     double nu_yawdd = Xsig_aug(6, i);
     
+    double sin_yaw = sin(yaw);
+    double cos_yaw = cos(yaw);
+    
     // predicted state values
     double px_p, py_p;
     
     // avoid division by zero
     if(fabs(yawd) > 0.001) {
-      px_p = p_x + v / yawd * (sin(yaw + yawd * delta_t) - sin(yaw));
-      py_p = p_y + v / yawd * (cos(yaw) - cos(yaw + yawd * delta_t));
+      px_p = p_x + v / yawd * (sin(yaw + yawd * delta_t) - sin_yaw);
+      py_p = p_y + v / yawd * (cos_yaw - cos(yaw + yawd * delta_t));
     } else {
-      px_p = p_x + v * delta_t * cos(yaw);
-      py_p = p_y + v * delta_t * sin(yaw);
+      px_p = p_x + v * delta_t * cos_yaw;
+      py_p = p_y + v * delta_t * sin_yaw;
     }
     
     double v_p = v;
@@ -216,11 +223,14 @@ void UKF::Prediction(double delta_t) {
     double yawd_p = yawd;
     
     // add noise
-    px_p += 0.5 * nu_a * delta_t * delta_t * cos(yaw);
-    py_p += 0.5 * nu_a * delta_t * delta_t * sin(yaw);
+    double delta_t2 = delta_t * delta_t;
+    double nu_a_delta_t2 = 0.5 * nu_a * delta_t2;
+    
+    px_p += nu_a_delta_t2 * cos_yaw;
+    py_p += nu_a_delta_t2 * sin_yaw;
     v_p += nu_a * delta_t;
     
-    yaw_p += 0.5 * nu_yawdd * delta_t * delta_t;
+    yaw_p += 0.5 * nu_yawdd * delta_t2;
     yawd_p += nu_yawdd * delta_t;
     
     // write predicted sigma point into right column
